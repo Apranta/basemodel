@@ -179,8 +179,8 @@ func FindbyID(i interface{}, id int) (err error) {
 func FindFilter(i interface{}, order []string, sort []string, limit int, offset int, filter interface{}) (interface{}, error) {
 	query := DB // clone db connection
 
-	conditionQuery(query, filter)
-	orderSortQuery(query, order, sort)
+	query = conditionQuery(query, filter)
+	query = orderSortQuery(query, order, sort)
 
 	if limit > 0 {
 		query = query.Limit(limit)
@@ -206,8 +206,8 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 
 	query := DB
 
-	conditionQuery(query, filter)
-	orderSortQuery(query, order, sort)
+	query = conditionQuery(query, filter)
+	query = orderSortQuery(query, order, sort)
 
 	temp := query
 	var totalRows int
@@ -232,7 +232,7 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 	return result, err
 }
 
-func conditionQuery(query *gorm.DB, filter interface{}) {
+func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 	refFilter := reflect.ValueOf(filter).Elem()
 	refType := refFilter.Type()
 	for x := 0; x < refFilter.NumField(); x++ {
@@ -256,9 +256,11 @@ func conditionQuery(query *gorm.DB, filter interface{}) {
 			}
 		}
 	}
+
+	return query
 }
 
-func orderSortQuery(query *gorm.DB, order []string, sort []string) {
+func orderSortQuery(query *gorm.DB, order []string, sort []string) *gorm.DB {
 	for k, v := range order {
 		q := v
 		if len(sort) > k {
@@ -269,4 +271,6 @@ func orderSortQuery(query *gorm.DB, order []string, sort []string) {
 		}
 		query = query.Order(q)
 	}
+
+	return query
 }
