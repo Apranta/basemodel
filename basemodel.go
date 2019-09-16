@@ -29,7 +29,7 @@ type (
 		Maxlifetime    int
 		IdleConnection int
 		OpenConnection int
-		SSL            bool
+		SSL            string
 		Logmode        bool
 	}
 
@@ -73,7 +73,7 @@ func Start(conf DBConfig) {
 			panic(err)
 		}
 	case PostgresAdapter:
-		connectionString := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%t", conf.Username, conf.Password, conf.Host, conf.Port, conf.Table, conf.SSL)
+		connectionString := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", conf.Username, conf.Password, conf.Host, conf.Port, conf.Table, conf.SSL)
 		if err := DBConnect("postgres", connectionString, conf); err != nil {
 			panic(err)
 		}
