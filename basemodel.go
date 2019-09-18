@@ -250,7 +250,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 			case "OR":
 				var e []string
 				for _, v := range field.Interface().([]string) {
-					e = append(e, refType.Field(x).Tag.Get("json")+" = '"+v)
+					e = append(e, refType.Field(x).Tag.Get("json")+" = '"+v+"'")
 				}
 				query = query.Where(strings.Join(e, " OR "))
 			}
