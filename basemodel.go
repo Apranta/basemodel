@@ -175,6 +175,17 @@ func FindbyID(i interface{}, id int) (err error) {
 	})
 }
 
+// SingleFindFilter finds by filter
+func SingleFindFilter(i interface{}, filter interface{}) (err error) {
+	query := DB // clone db connection
+
+	query = conditionQuery(query, filter)
+
+	err = query.Last(i).Error
+
+	return err
+}
+
 // FindFilter finds by filter. limit 0 to find all
 func FindFilter(i interface{}, order []string, sort []string, limit int, offset int, filter interface{}) (interface{}, error) {
 	query := DB // clone db connection
