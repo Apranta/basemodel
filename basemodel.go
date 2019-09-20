@@ -175,7 +175,7 @@ func FindbyID(i interface{}, id int) (err error) {
 	})
 }
 
-// FindFilterSingle finds by filter
+// SingleFindFilter finds by filter
 func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 	query := DB // clone db connection
 
