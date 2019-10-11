@@ -252,7 +252,8 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 	refType := refFilter.Type()
 	for x := 0; x < refFilter.NumField(); x++ {
 		field := refFilter.Field(x)
-		if field.Interface() != "" {
+		// check if empty
+		if !reflect.DeepEqual(field.Interface(), reflect.Zero(reflect.TypeOf(field.Interface())).Interface()) {
 			switch refType.Field(x).Tag.Get("condition") {
 			default:
 				query = query.Where(fmt.Sprintf("%s IN (?)", refType.Field(x).Tag.Get("json")), field.Interface())
