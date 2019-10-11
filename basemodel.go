@@ -255,7 +255,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 		if field.Interface() != "" {
 			switch refType.Field(x).Tag.Get("condition") {
 			default:
-				query = query.Where(fmt.Sprintf("%s = ?", refType.Field(x).Tag.Get("json")), field.Interface())
+				query = query.Where(fmt.Sprintf("%s IN (?)", refType.Field(x).Tag.Get("json")), field.Interface())
 			case "LIKE":
 				query = query.Where(fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition")), "%"+strings.ToLower(field.Interface().(string))+"%")
 			case "BETWEEN":
