@@ -215,9 +215,6 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 	if page <= 0 {
 		page = 1
 	}
-	if rows <= 0 {
-		rows = 25
-	}
 
 	query := DB
 
@@ -229,10 +226,19 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 
 	temp.Find(i).Count(&totalRows)
 
-	offset := (page * rows) - rows
-	lastPage := int(math.Ceil(float64(totalRows) / float64(rows)))
+	var (
+		offset   int
+		lastPage int
+	)
 
-	query.Limit(rows).Offset(offset).Find(i)
+	if rows > 0 {
+		offset = (page * rows) - rows
+		lastPage = int(math.Ceil(float64(totalRows) / float64(rows)))
+
+		query = query.Limit(rows).Offset(offset)
+	}
+
+	query.Find(i)
 
 	result = PagedFindResult{
 		TotalData:   totalRows,
