@@ -281,6 +281,8 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				if x != (refFilter.NumField() - 1) {
 					query = query.Where(strings.Join(e, " OR "))
 				}
+				fmt.Printf("SINGLE_OR =>> %+v", query)
+
 			}
 		}
 	}
