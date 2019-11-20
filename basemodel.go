@@ -274,13 +274,11 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				for _, v := range field.Interface().([]string) {
 					e = append(e, refType.Field(x).Tag.Get("json")+" = '"+v+"'")
 				}
-				query = query.Where(strings.Join(e, " OR "))
+				query = query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
 			case "SINGLE_OR":
 				var e []string
 				e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
-				if x != (refFilter.NumField() - 1) {
-					query = query.Where(strings.Join(e, " OR "))
-				}
+				query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
 				fmt.Printf("SINGLE_OR =>> %+v", query)
 
 			}
