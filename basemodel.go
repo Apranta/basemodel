@@ -276,7 +276,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				}
 				query = query.Where(strings.Join(e, " OR "))
 			case "SINGLE_OR":
-				var e string
+				var e []string
 				e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
 				if x != (refFilter.NumField() - 1) {
 					query = query.Where(strings.Join(e, " OR "))
