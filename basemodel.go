@@ -279,7 +279,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				var e []string
 				e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
 				query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
-				fmt.Printf("SINGLE_OR =>> %+v", query)
+				fmt.Printf(" check =>> %s", fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")))
 
 			}
 		}
