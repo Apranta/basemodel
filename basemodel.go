@@ -183,7 +183,18 @@ func FindbyID(i interface{}, id int) (err error) {
 func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 	query := DB // clone db connection
 
-	query = conditionQuery(query, filter)
+	query = conditionQuery(query, filter, false)
+
+	err = query.Last(i).Error
+
+	return err
+}
+
+// SingleFindFilter finds by filter with Or where search
+func SingleFindFilterWhereOr(i interface{}, filter interface{}, orOperation bool) (err error) {
+	query := DB // clone db connection
+
+	query = conditionQuery(query, filter, orOperation)
 
 	err = query.Last(i).Error
 
@@ -194,7 +205,7 @@ func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 func FindFilter(i interface{}, order []string, sort []string, limit int, offset int, filter interface{}) (interface{}, error) {
 	query := DB // clone db connection
 
-	query = conditionQuery(query, filter)
+	query = conditionQuery(query, filter, false)
 	query = orderSortQuery(query, order, sort)
 
 	if limit > 0 {
@@ -218,7 +229,7 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 
 	query := DB
 
-	query = conditionQuery(query, filter)
+	query = conditionQuery(query, filter, false)
 	query = orderSortQuery(query, order, sort)
 
 	temp := query
@@ -253,7 +264,7 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 	return result, err
 }
 
-func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
+func conditionQuery(query *gorm.DB, filter interface{}, orOperation bool) *gorm.DB {
 	refFilter := reflect.ValueOf(filter).Elem()
 	refType := refFilter.Type()
 	for x := 0; x < refFilter.NumField(); x++ {
@@ -262,24 +273,46 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 		if !reflect.DeepEqual(field.Interface(), reflect.Zero(reflect.TypeOf(field.Interface())).Interface()) {
 			switch refType.Field(x).Tag.Get("condition") {
 			default:
-				query = query.Where(fmt.Sprintf("%s IN (?)", refType.Field(x).Tag.Get("json")), field.Interface())
+				format := fmt.Sprintf("%s IN (?)", refType.Field(x).Tag.Get("json"))
+				if orOperation {
+					query = query.Or(format, field.Interface())
+				} else {
+					query = query.Where(format, field.Interface())
+				}
+
 			case "LIKE":
-				query = query.Where(fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition")), "%"+strings.ToLower(field.Interface().(string))+"%")
+				format := fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"))
+				field := "%" + strings.ToLower(field.Interface().(string)) + "%"
+				if orOperation {
+					query = query.Or(format, field)
+				} else {
+					query = query.Where(format, field)
+				}
 			case "BETWEEN":
 				if values, ok := field.Interface().(CompareFilter); ok && values.Value1 != "" {
-					query = query.Where(fmt.Sprintf("%s %s ? %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"), "AND"), values.Value1, values.Value2)
+					format := fmt.Sprintf("%s %s ? %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"), "AND")
+					if orOperation {
+						query = query.Or(format, values.Value1, values.Value2)
+					} else {
+						query = query.Where(format, values.Value1, values.Value2)
+					}
 				}
 			case "OR":
 				var e []string
 				for _, v := range field.Interface().([]string) {
 					e = append(e, refType.Field(x).Tag.Get("json")+" = '"+v+"'")
 				}
-				query = query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
-			case "SINGLE_OR":
-				var e []string
-				e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
-				query = query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
-				fmt.Println(" check =>> ", fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")))
+				if orOperation {
+					query = query.Or(strings.Join(e, " OR "))
+				} else {
+					query = query.Where(strings.Join(e, " OR "))
+				}
+
+				// case "SINGLE_OR":
+				// 	var e []string
+				// 	e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
+				// 	query = query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
+				// 	fmt.Println(" check =>> ", fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")))
 
 			}
 		}
