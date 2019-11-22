@@ -9,6 +9,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 
+	// import mysql, postgres, and pq
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/lib/pq"
@@ -190,17 +191,6 @@ func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 	return err
 }
 
-// SingleFindFilter finds by filter with Or where search
-func SingleFindFilterWhereOr(i interface{}, filter interface{}, orOperation bool) (err error) {
-	query := DB // clone db connection
-
-	query = conditionQuery(query, filter, orOperation)
-
-	err = query.Last(i).Error
-
-	return err
-}
-
 // FindFilter finds by filter. limit 0 to find all
 func FindFilter(i interface{}, order []string, sort []string, limit int, offset int, filter interface{}) (interface{}, error) {
 	query := DB // clone db connection
@@ -222,14 +212,14 @@ func FindFilter(i interface{}, order []string, sort []string, limit int, offset 
 }
 
 // PagedFindFilter same with FindFilter but with pagination
-func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []string, filter interface{}) (result PagedFindResult, err error) {
+func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []string, filter interface{}, allfieldcondition ...string) (result PagedFindResult, err error) {
 	if page <= 0 {
 		page = 1
 	}
 
 	query := DB
 
-	query = conditionQuery(query, filter, false)
+	query = conditionQuery(query, filter)
 	query = orderSortQuery(query, order, sort)
 
 	temp := query
@@ -264,26 +254,27 @@ func PagedFindFilter(i interface{}, page int, rows int, order []string, sort []s
 	return result, err
 }
 
-func conditionQuery(query *gorm.DB, filter interface{}, orOperation bool) *gorm.DB {
+func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 	refFilter := reflect.ValueOf(filter).Elem()
 	refType := refFilter.Type()
 	for x := 0; x < refFilter.NumField(); x++ {
 		field := refFilter.Field(x)
 		// check if empty
 		if !reflect.DeepEqual(field.Interface(), reflect.Zero(reflect.TypeOf(field.Interface())).Interface()) {
-			switch refType.Field(x).Tag.Get("condition") {
+			con := strings.Split(refType.Field(x).Tag.Get("condition"), ",")
+			tags := parseTag(refType.Field(x).Tag.Get("condition"))
+			switch con[0] {
 			default:
 				format := fmt.Sprintf("%s IN (?)", refType.Field(x).Tag.Get("json"))
-				if orOperation {
+				if tags.Contains("optional") {
 					query = query.Or(format, field.Interface())
 				} else {
 					query = query.Where(format, field.Interface())
 				}
-
 			case "LIKE":
 				format := fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"))
 				field := "%" + strings.ToLower(field.Interface().(string)) + "%"
-				if orOperation {
+				if tags.Contains("optional") {
 					query = query.Or(format, field)
 				} else {
 					query = query.Where(format, field)
@@ -291,7 +282,7 @@ func conditionQuery(query *gorm.DB, filter interface{}, orOperation bool) *gorm.
 			case "BETWEEN":
 				if values, ok := field.Interface().(CompareFilter); ok && values.Value1 != "" {
 					format := fmt.Sprintf("%s %s ? %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"), "AND")
-					if orOperation {
+					if tags.Contains("optional") {
 						query = query.Or(format, values.Value1, values.Value2)
 					} else {
 						query = query.Where(format, values.Value1, values.Value2)
@@ -302,18 +293,11 @@ func conditionQuery(query *gorm.DB, filter interface{}, orOperation bool) *gorm.
 				for _, v := range field.Interface().([]string) {
 					e = append(e, refType.Field(x).Tag.Get("json")+" = '"+v+"'")
 				}
-				if orOperation {
+				if tags.Contains("optional") {
 					query = query.Or(strings.Join(e, " OR "))
 				} else {
 					query = query.Where(strings.Join(e, " OR "))
 				}
-
-				// case "SINGLE_OR":
-				// 	var e []string
-				// 	e = append(e, refType.Field(x).Tag.Get("json")+" = '"+field.Interface().(string)+"'")
-				// 	query = query.Or(fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")), field.Interface())
-				// 	fmt.Println(" check =>> ", fmt.Sprintf("%s LIKE (?)", refType.Field(x).Tag.Get("json")))
-
 			}
 		}
 	}
