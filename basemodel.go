@@ -184,7 +184,7 @@ func FindbyID(i interface{}, id int) (err error) {
 func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 	query := DB // clone db connection
 
-	query = conditionQuery(query, filter, false)
+	query = conditionQuery(query, filter)
 
 	err = query.Last(i).Error
 
@@ -195,7 +195,7 @@ func SingleFindFilter(i interface{}, filter interface{}) (err error) {
 func FindFilter(i interface{}, order []string, sort []string, limit int, offset int, filter interface{}) (interface{}, error) {
 	query := DB // clone db connection
 
-	query = conditionQuery(query, filter, false)
+	query = conditionQuery(query, filter)
 	query = orderSortQuery(query, order, sort)
 
 	if limit > 0 {
