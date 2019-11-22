@@ -272,7 +272,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 					query = query.Where(format, field.Interface())
 				}
 			case "LIKE":
-				format := fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"))
+				format := fmt.Sprintf("LOWER(%s) %s ?", refType.Field(x).Tag.Get("json"), con[0])
 				field := "%" + strings.ToLower(field.Interface().(string)) + "%"
 				if tags.Contains("optional") {
 					query = query.Or(format, field)
@@ -281,7 +281,7 @@ func conditionQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				}
 			case "BETWEEN":
 				if values, ok := field.Interface().(CompareFilter); ok && values.Value1 != "" {
-					format := fmt.Sprintf("%s %s ? %s ?", refType.Field(x).Tag.Get("json"), refType.Field(x).Tag.Get("condition"), "AND")
+					format := fmt.Sprintf("%s %s ? %s ?", refType.Field(x).Tag.Get("json"), con[0], "AND")
 					if tags.Contains("optional") {
 						query = query.Or(format, values.Value1, values.Value2)
 					} else {
