@@ -40,7 +40,10 @@ type (
 
 	// BaseModel will be used as foundation of all models
 	BaseModel struct {
-		gorm.Model
+		ID        uint       `json:"id" gorm:"primary_key"`
+		CreatedAt time.Time  `json:"created_at"`
+		UpdatedAt time.Time  `json:"updated_at"`
+		DeletedAt *time.Time `json:"deleted_at" sql:"index"`
 	}
 
 	// DBFunc gorm trx function
