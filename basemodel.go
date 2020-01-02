@@ -40,7 +40,7 @@ type (
 
 	// BaseModel will be used as foundation of all models
 	BaseModel struct {
-		ID        uint       `json:"id" gorm:"primary_key"`
+		ID        uint64     `json:"id" gorm:"primary_key"`
 		CreatedAt time.Time  `json:"created_at"`
 		UpdatedAt time.Time  `json:"updated_at"`
 		DeletedAt *time.Time `json:"deleted_at" sql:"index"`
