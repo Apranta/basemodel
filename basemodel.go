@@ -183,7 +183,7 @@ func FirstOrCreate(i interface{}, where ...interface{}) error {
 
 // First get first matched record
 func First(i interface{}, where ...interface{}) error {
-	return WithinTransaction(func(tx *gorm.DB) error {
+	return WithinTransaction(func(tx *gorm.DB) (err error) {
 		if err = tx.First(i, where...).Error; err != nil {
 			tx.Rollback()
 			return err
@@ -194,7 +194,7 @@ func First(i interface{}, where ...interface{}) error {
 
 // Last get last matched record
 func Last(i interface{}, where ...interface{}) error {
-	return WithinTransaction(func(tx *gorm.DB) error {
+	return WithinTransaction(func(tx *gorm.DB) (err error) {
 		if err = tx.Last(i, where...).Error; err != nil {
 			tx.Rollback()
 			return err
