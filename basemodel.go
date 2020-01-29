@@ -148,6 +148,23 @@ func Save(i interface{}) error {
 	})
 }
 
+// SaveOrCreate saves if record found, else create new.
+func SaveOrCreate(i interface{}) error {
+	return WithinTransaction(func(tx *gorm.DB) (err error) {
+		if DB.NewRecord(i) {
+			if err = tx.Create(i).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+		if err = tx.Save(i).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		return err
+	})
+}
+
 // Delete removes row in db based on model.
 func Delete(i interface{}, where ...interface{}) error {
 	return WithinTransaction(func(tx *gorm.DB) (err error) {
