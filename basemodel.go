@@ -149,9 +149,20 @@ func Save(i interface{}) error {
 }
 
 // Delete removes row in db based on model.
-func Delete(i interface{}) error {
+func Delete(i interface{}, where ...interface{}) error {
 	return WithinTransaction(func(tx *gorm.DB) (err error) {
-		if err = tx.Delete(i).Error; err != nil {
+		if err = tx.Delete(i, where...).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		return err
+	})
+}
+
+// FirstOrInit gets first matched record, or create a new one
+func FirstOrInit(i interface{}, where ...interface{}) error {
+	return WithinTransaction(func(tx *gorm.DB) (err error) {
+		if err = tx.FirstOrInit(i, where...).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -160,9 +171,31 @@ func Delete(i interface{}) error {
 }
 
 // FirstOrCreate gets first matched record, or create a new one
-func FirstOrCreate(i interface{}) error {
+func FirstOrCreate(i interface{}, where ...interface{}) error {
 	return WithinTransaction(func(tx *gorm.DB) (err error) {
-		if err = tx.FirstOrCreate(i).Error; err != nil {
+		if err = tx.FirstOrCreate(i, where...).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		return err
+	})
+}
+
+// First get first matched record
+func First(i interface{}, where ...interface{}) error {
+	return WithinTransaction(func(tx *gorm.DB) error {
+		if err = tx.First(i, where...).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		return err
+	})
+}
+
+// Last get last matched record
+func Last(i interface{}, where ...interface{}) error {
+	return WithinTransaction(func(tx *gorm.DB) error {
+		if err = tx.Last(i, where...).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
