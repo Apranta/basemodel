@@ -149,15 +149,15 @@ func Save(i interface{}) error {
 }
 
 // SaveOrCreate saves if record found, else create new.
-func SaveOrCreate(i interface{}) error {
+func SaveOrCreate(i interface{}, where ...interface{}) error {
 	return WithinTransaction(func(tx *gorm.DB) (err error) {
-		if DB.NewRecord(i) {
+		err = First(i, where...)
+		if err != nil {
 			if err = tx.Create(i).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
-		}
-		if err = tx.Save(i).Error; err != nil {
+		} else if err = tx.Save(i).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
